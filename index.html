@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KIN Sandbox Checkout — Demonstration Only</title>
+<!-- Config comes from the server, generated from .env. The client ID is NOT
+     hard-coded in this file, and the sandbox banner below reads the same
+     config value, so sandbox mode can never be silently off. -->
+<script src="/config.js"></script>
+<style>
+  :root{
+    --coral:#ef5d3a; --coral-dark:#c8431f; --coral-soft:#fdeee8;
+    --cream:#fff9f1; --ink:#2b2118; --muted:#7a6a5c; --line:#f0ddcb;
+    --ok:#1d7a4f; --warn-bg:#fff3d6; --warn-line:#e8c96a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--cream);color:var(--ink)}
+  h1,h2,h3,.serif{font-family:Georgia,"Times New Roman",serif}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px 64px}
+
+  .mode-strip{display:none;padding:10px 16px;text-align:center;font-weight:700;letter-spacing:.02em;font-size:14px}
+  .mode-strip.sandbox{display:block;background:var(--coral);color:#fff}
+  .mode-strip.live{display:block;background:#8b0000;color:#fff}
+
+  .demo-banner{background:var(--warn-bg);border:2px solid var(--warn-line);border-radius:12px;
+    padding:16px 20px;margin:22px 0 8px;text-align:center}
+  .demo-banner .big{font-weight:800;font-size:17px}
+  .demo-banner p{margin:6px 0 0;font-size:15px}
+
+  header.brand{text-align:center;padding:30px 0 6px}
+  .wordmark{font-size:44px;font-weight:700;letter-spacing:-.01em}
+  .wordmark .k{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;
+    border-radius:50%;background:var(--coral);color:#fff;font-family:Georgia,serif;font-size:36px;vertical-align:-8px}
+  .kicker{text-transform:uppercase;letter-spacing:.22em;font-size:12px;color:var(--coral-dark);font-weight:700;margin-top:10px}
+  .tagline{font-size:30px;margin:8px 0 4px;color:var(--ink)}
+  .guiding{color:var(--muted);font-style:italic;font-size:16px;margin:2px 0 0}
+
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:30px 0 6px}
+  .step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .step .n{display:inline-block;background:var(--coral-soft);color:var(--coral-dark);font-weight:800;
+    border-radius:50%;width:26px;height:26px;line-height:26px;text-align:center;margin-bottom:8px}
+  .step h3{margin:0 0 4px;font-size:16px}
+  .step p{margin:0;font-size:13.5px;color:var(--muted)}
+
+  .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 8px}
+  .pillar{background:var(--coral-soft);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .pillar h3{margin:0 0 4px;font-size:16px;color:var(--coral-dark)}
+  .pillar p{margin:0;font-size:13.5px;color:var(--ink)}
+
+  h2.section{font-size:24px;margin:34px 0 6px}
+  .section-sub{color:var(--muted);margin:0 0 16px;font-size:15px}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    background:var(--coral-soft);color:var(--coral-dark);border-radius:999px;padding:4px 10px}
+  .chip.urgency{background:#fdf3d7;color:#8a6d1d}
+  .card h3{margin:0 0 6px;font-size:18px;line-height:1.3}
+  .household{font-weight:700;font-size:14px}
+  .metro{color:var(--muted);font-size:13.5px;margin-bottom:8px}
+  .covers{font-size:14px;margin:0 0 10px}
+  .label{font-size:12.5px;color:var(--coral-dark);font-weight:700;margin-bottom:10px}
+  .amount{font-family:Georgia,serif;font-size:26px;margin:2px 0 8px}
+  .amount span{font-size:13px;color:var(--muted);font-family:inherit}
+  .bar{height:10px;background:#f3e4d2;border-radius:999px;overflow:hidden;margin:4px 0 6px}
+  .bar > div{height:100%;background:var(--coral);border-radius:999px}
+  .funded{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+  .card .spacer{flex:1}
+  button.explain{width:100%;padding:10px;border-radius:10px;border:2px solid var(--coral);
+    background:#fff;color:var(--coral-dark);font-weight:700;font-size:14.5px;cursor:pointer;margin-bottom:10px}
+  button.explain:hover{background:var(--coral-soft)}
+  .explainer{display:none;background:var(--cream);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-size:14px;line-height:1.55;margin-bottom:12px}
+  .explainer.open{display:block}
+  .explainer .src{margin-top:8px;font-size:12px;color:var(--muted)}
+  .explainer .meta{margin-top:8px;font-size:12.5px;background:#fff;border:1px dashed var(--line);border-radius:8px;padding:6px 8px}
+  .askrow{display:flex;gap:8px;margin-top:10px}
+  .askrow input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;color:var(--ink)}
+  .askrow button{padding:8px 14px;border-radius:8px;border:2px solid var(--coral);background:var(--coral);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer}
+  .askrow button:disabled{opacity:.6;cursor:default}
+  .status{font-size:13.5px;margin-top:10px;min-height:18px}
+  .status.error{color:#a11;font-weight:600}
+  .sandbox-note{font-size:12.5px;color:var(--muted);text-align:center;margin-top:6px}
+
+  #confirmation{display:none;background:#eefaf3;border:2px solid var(--ok);border-radius:14px;
+    padding:22px 24px;margin:34px 0 0}
+  #confirmation.show{display:block}
+  #confirmation h2{margin:0 0 8px;color:var(--ok);font-size:24px}
+  #confirmation .txn{font-size:17px;margin:6px 0}
+  #confirmation code{background:#fff;border:1px solid var(--line);padding:2px 8px;border-radius:6px;font-size:15px}
+  #confirmation p{margin:6px 0;font-size:15px}
+
+  footer{margin-top:44px;text-align:center;color:var(--muted);font-size:13px}
+  @media (max-width:900px){.cards,.pillars,.steps{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){.cards,.pillars,.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="mode-strip" class="mode-strip"></div>
+
+<div class="wrap">
+
+  <!-- 1. Honesty banner first, exactly as the judge flow requires. -->
+  <div class="demo-banner" role="note">
+    <div class="big">Demonstration only. All listings are fictional. No real donations or payments are collected.</div>
+    <p id="honesty-banner">Loading honesty notice…</p>
+  </div>
+
+  <!-- 2. Brand -->
+  <header class="brand">
+    <div class="wordmark"><span class="k">k</span>in.</div>
+    <div class="kicker">Neighbors helping neighbors</div>
+    <h1 class="tagline serif">A little help can change everything</h1>
+    <p class="guiding">Understanding comes first. Trust is earned through transparency.</p>
+  </header>
+
+  <!-- Experience order: understand, explain, build trust, transact. -->
+  <div class="steps">
+    <div class="step"><span class="n">1</span><h3>Understand the need</h3><p>Browse anonymized, fictional example needs. No names, no faces, no hardship stories.</p></div>
+    <div class="step"><span class="n">2</span><h3>Explain the evidence</h3><p>An AI explainer says, in plain language, what a payment covers and what KIN verified.</p></div>
+    <div class="step"><span class="n">3</span><h3>Build trust</h3><p>Four trust pillars govern every listing, stated up front, below.</p></div>
+    <div class="step"><span class="n">4</span><h3>Complete a sandbox transaction</h3><p>Check out with PayPal sandbox test funds. A server-side capture verifies the result.</p></div>
+  </div>
+
+  <h2 class="section serif">How KIN earns trust</h2>
+  <p class="section-sub">Four pillars, named on every listing:</p>
+  <div class="pillars">
+    <div class="pillar"><h3>Recipient choice</h3><p>A listing is published only with the recipient's consent.</p></div>
+    <div class="pillar"><h3>KIN decision</h3><p>KIN decides eligibility, verifies the need, and approves each listing before it appears.</p></div>
+    <div class="pillar"><h3>Partner choice</h3><p>Partners choose how they take part; services stay independent.</p></div>
+    <div class="pillar"><h3>Supporter choice</h3><p>Supporters choose which verified need to meet. That choice is theirs.</p></div>
+  </div>
+
+  <h2 class="section serif">Example needs</h2>
+  <p class="section-sub">Every household below is fictional and anonymized: “Confidential household” plus metro area only.</p>
+  <div id="cards" class="cards"></div>
+
+  <!-- Confirmation appears ONLY after a verified server-side capture. -->
+  <section id="confirmation" aria-live="polite">
+    <h2 class="serif">Sandbox transaction confirmed</h2>
+    <p class="txn">Transaction ID: <code id="conf-txn"></code></p>
+    <p class="txn">Order ID: <code id="conf-order"></code></p>
+    <p class="txn">Amount: <code id="conf-amount"></code> (PayPal sandbox test funds)</p>
+    <p><strong>No real money moved.</strong> This transaction ran entirely in PayPal sandbox mode and was verified by a server-side capture.</p>
+    <p><strong>The household is fictional.</strong> All listings on this page are fictional examples; no real family was involved and no real donation was collected.</p>
+  </section>
+
+  <footer>
+    KIN Sandbox Checkout is a contest prototype for the PayPal AI Hackathon. It is not KIN's live service,
+    and KIN is not accepting donations. Checkout uses PayPal sandbox only.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var cfg = window.KIN_CONFIG || { sandbox: true, paypalEnv: 'sandbox', clientId: '' };
+
+  // Sandbox strip reads the SAME config the checkout uses.
+  var strip = document.getElementById('mode-strip');
+  if (cfg.sandbox) {
+    strip.className = 'mode-strip sandbox';
+    strip.textContent = 'PAYPAL SANDBOX MODE — test funds only, no real money moves';
+  } else {
+    strip.className = 'mode-strip live';
+    strip.textContent = 'WARNING: this build is NOT in sandbox mode';
+  }
+
+  var explainers = {};
+  var listings = [];
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function renderCard(listing) {
+    var card = el('div', 'card');
+    var chips = el('div', 'chips');
+    chips.appendChild(el('span', 'chip', listing.category));
+    chips.appendChild(el('span', 'chip urgency', listing.urgency));
+    card.appendChild(chips);
+    card.appendChild(el('h3', 'serif', listing.title));
+    card.appendChild(el('div', 'household', listing.household));
+    card.appendChild(el('div', 'metro', listing.metro));
+    card.appendChild(el('p', 'covers', 'Covers: ' + listing.covers));
+    card.appendChild(el('div', 'label', listing.label));
+    var amt = el('div', 'amount', '$' + listing.amount_usd);
+    amt.appendChild(el('span', null, ' total need'));
+    card.appendChild(amt);
+    var bar = el('div', 'bar');
+    var fill = el('div');
+    fill.style.width = Math.max(0, Math.min(100, listing.funded_pct)) + '%';
+    bar.appendChild(fill);
+    card.appendChild(bar);
+    card.appendChild(el('div', 'funded', listing.funded_pct + '% funded in this fictional example'));
+    card.appendChild(el('div', 'spacer'));
+
+    // AI explainer panel: the live endpoint (POST /api/explain) is tried
+    // first. On ANY failure (no key configured, provider error, timeout)
+    // the panel shows the pre-generated fallback text with its fallback
+    // label, never passed off as a live AI answer.
+    var FALLBACK_LABEL = 'Explainer generated from this listing\u2019s verified fields only. Pre-generated fallback text (data/explainers.json) is shown in this build.';
+    var LIVE_LABEL = 'Live AI explainer, generated from this listing\u2019s verified fields only.';
+    var fallbackText = (explainers[listing.id] || {}).text || 'Explainer text is unavailable for this listing.';
+    var btn = el('button', 'explain', 'Explain this need');
+    btn.type = 'button';
+    var panel = el('div', 'explainer');
+    var pText = el('div', null, fallbackText);
+    var pMeta = el('div', 'meta');
+    pMeta.style.display = 'none';
+    var pSrc = el('div', 'src', FALLBACK_LABEL);
+    var askRow = el('div', 'askrow');
+    var askInput = document.createElement('input');
+    askInput.type = 'text';
+    askInput.placeholder = 'Ask about this need\u2026';
+    askInput.setAttribute('aria-label', 'Ask about this need');
+    var askBtn = el('button', null, 'Ask');
+    askBtn.type = 'button';
+    askRow.appendChild(askInput); askRow.appendChild(askBtn);
+    panel.appendChild(pText); panel.appendChild(pMeta); panel.appendChild(askRow); panel.appendChild(pSrc);
+
+    var liveLoaded = false;
+    function showFallback() {
+      liveLoaded = false;
+      pText.textContent = fallbackText;
+      pMeta.style.display = 'none';
+      pSrc.textContent = FALLBACK_LABEL;
+    }
+    function showLive(j, asked) {
+      liveLoaded = true;
+      pText.textContent = j.text;
+      pSrc.textContent = LIVE_LABEL;
+      if (asked) {
+        var facts = (j.factsUsed && j.factsUsed.length) ? j.factsUsed.join(', ') : 'none';
+        var asmp = (j.assumptions && j.assumptions.length) ? j.assumptions.join('; ') : 'none';
+        pMeta.textContent = 'Facts used: ' + facts + ' \u00B7 Assumptions flagged: ' + asmp;
+        pMeta.style.display = 'block';
+      } else {
+        pMeta.style.display = 'none';
+      }
+    }
+    function fetchExplain(question) {
+      var payload = { listingId: listing.id };
+      if (question) payload.question = question;
+      return fetch('/api/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        return r.json().then(function (j) {
+          if (!r.ok || !j || j.source !== 'live-ai' || !j.text) throw new Error('live explainer unavailable');
+          return j;
+        });
+      });
+    }
+    btn.addEventListener('click', function () {
+      var opening = !panel.classList.contains('open');
+      panel.classList.toggle('open');
+      if (opening && !liveLoaded) {
+        fetchExplain(null).then(function (j) { showLive(j, false); }).catch(showFallback);
+      }
+    });
+    function ask() {
+      var q = askInput.value.trim();
+      if (!q) return;
+      askBtn.disabled = true;
+      fetchExplain(q).then(function (j) { showLive(j, true); }).catch(showFallback)
+        .then(function () { askBtn.disabled = false; });
+    }
+    askBtn.addEventListener('click', ask);
+    askInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ask(); } });
+    card.appendChild(btn);
+    card.appendChild(panel);
+
+    // PayPal sandbox checkout mount point + honest status line.
+    var mount = el('div');
+    mount.id = 'paypal-' + listing.id;
+    card.appendChild(mount);
+    var status = el('div', 'status');
+    status.id = 'status-' + listing.id;
+    card.appendChild(status);
+    card.appendChild(el('div', 'sandbox-note', 'Sandbox checkout: you will pay with a PayPal sandbox test account.'));
+    return card;
+  }
+
+  function setStatus(listingId, msg, isError) {
+    var s = document.getElementById('status-' + listingId);
+    if (s) { s.textContent = msg; s.className = 'status' + (isError ? ' error' : ''); }
+  }
+
+  function loadSdk() {
+    if (!cfg.clientId) return;
+    var s = document.createElement('script');
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(cfg.clientId) + '&currency=USD&intent=capture';
+    s.onload = initButtons;
+    s.onerror = function () {
+      listings.forEach(function (l) { setStatus(l.id, 'The PayPal sandbox SDK could not be loaded. No payment was attempted.', true); });
+    };
+    document.head.appendChild(s);
+  }
+
+  function initButtons() {
+    if (!window.paypal) return;
+    listings.forEach(function (listing) {
+      window.paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'paypal' },
+        createOrder: function () {
+          setStatus(listing.id, 'Creating sandbox order…');
+          return fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ listingId: listing.id })
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok) throw new Error(j.message || j.error || ('Order creation failed (HTTP ' + r.status + ')'));
+              return j.id;
+            });
+          }).catch(function (e) {
+            setStatus(listing.id, e.message, true);
+            throw e;
+          });
+        },
+        onApprove: function (data) {
+          setStatus(listing.id, 'Approved in sandbox. Verifying with a server-side capture…');
+          return fetch('/api/orders/' + encodeURIComponent(data.orderID) + '/capture', { method: 'POST' })
+            .then(function (r) {
+              return r.json().then(function (j) {
+                if (!r.ok || !j.verified) throw new Error(j.message || j.error || ('Capture was not verified (HTTP ' + r.status + ')'));
+                showConfirmation(j);
+                setStatus(listing.id, 'Verified sandbox transaction: ' + j.transactionId);
+              });
+            }).catch(function (e) {
+              setStatus(listing.id, e.message + ' No success is shown because the capture was not verified.', true);
+            });
+        },
+        onError: function (err) {
+          setStatus(listing.id, 'PayPal sandbox checkout error: ' + (err && err.message ? err.message : 'unknown error') + '. No payment was completed.', true);
+        }
+      }).render('#paypal-' + listing.id);
+    });
+  }
+
+  function showConfirmation(result) {
+    document.getElementById('conf-txn').textContent = result.transactionId;
+    document.getElementById('conf-order').textContent = result.orderId;
+    document.getElementById('conf-amount').textContent = (result.currency || 'USD') + ' ' + (result.amount || '');
+    var c = document.getElementById('confirmation');
+    c.classList.add('show');
+    c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  Promise.all([
+    fetch('data/listings.json').then(function (r) { return r.json(); }),
+    fetch('data/explainers.json').then(function (r) { return r.json(); })
+  ]).then(function (results) {
+    var data = results[0];
+    explainers = (results[1] && results[1].explainers) || {};
+    listings = data.listings || [];
+    document.getElementById('honesty-banner').textContent = data.banner;
+    var wrap = document.getElementById('cards');
+    listings.forEach(function (l) { wrap.appendChild(renderCard(l)); });
+    loadSdk();
+  }).catch(function (e) {
+    document.getElementById('honesty-banner').textContent = 'All examples on this page are fictional. KIN is not accepting real donations. Checkout runs in PayPal sandbox mode: no real money moves.';
+    document.getElementById('cards').textContent = 'Listings could not be loaded: ' + e.message;
+  });
+})();
+</script>
+</body>
+</html>
