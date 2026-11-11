@@ -47,9 +47,14 @@ const CLIENT_ID = env.PAYPAL_CLIENT_ID || '';
 const CLIENT_SECRET = env.PAYPAL_CLIENT_SECRET || '';
 const SECRET_PLACEHOLDERS = ['', 'PENDING-SECURE-TRANSFER', 'your-sandbox-client-secret-here'];
 const secretConfigured = !SECRET_PLACEHOLDERS.includes(CLIENT_SECRET);
-const API_BASE = PAYPAL_ENV === 'live'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+// Sandbox-only contest build: this demonstration must never reach live
+// PayPal. Any PAYPAL_ENV other than "sandbox" is a startup error, and the
+// API base is pinned to the sandbox host rather than switched by config.
+if (PAYPAL_ENV !== 'sandbox') {
+  console.error(`FATAL: PAYPAL_ENV is "${PAYPAL_ENV}". This build is sandbox-only. Set PAYPAL_ENV=sandbox in .env. Exiting.`);
+  process.exit(1);
+}
+const API_BASE = 'https://api-m.sandbox.paypal.com';
 
 const listingsData = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'listings.json'), 'utf8'));
 const listingsById = Object.fromEntries(listingsData.listings.map((l) => [l.id, l]));
@@ -312,7 +317,7 @@ const server = http.createServer((req, res) => {
   if (p === '/config.js') {
     const cfg = {
       paypalEnv: PAYPAL_ENV,
-      sandbox: PAYPAL_ENV !== 'live',
+      sandbox: true,
       clientId: CLIENT_ID,
       secretConfigured,
     };
@@ -327,19 +332,20 @@ const server = http.createServer((req, res) => {
   if (capMatch && req.method === 'POST') return handleCaptureOrder(res, decodeURIComponent(capMatch[1]));
   if (p.startsWith('/api/')) return sendJson(res, 404, { error: 'not_found', message: `No API route for ${req.method} ${p}.` });
 
-  // Static files (with traversal protection).
-  let rel = p === '/' ? '/index.html' : p;
-  const file = path.normalize(path.join(ROOT, rel));
-  const blocked =
-    !file.startsWith(ROOT + path.sep) ||
-    path.basename(file).startsWith('.env') ||
-    file.startsWith(path.join(ROOT, 'docs') + path.sep);
-  if (blocked) {
-    res.writeHead(403); return res.end('Forbidden');
-  }
-  fs.readFile(file, (err, data) => {
+  // Static files: explicit allowlist only. The page needs exactly three
+  // files; everything else in the project directory (server.js, docs/,
+  // .env, package.json, screenshots) is never served, whatever the path.
+  const STATIC_FILES = {
+    '/': 'index.html',
+    '/index.html': 'index.html',
+    '/data/listings.json': path.join('data', 'listings.json'),
+    '/data/explainers.json': path.join('data', 'explainers.json'),
+  };
+  const relFile = STATIC_FILES[p];
+  if (!relFile) { res.writeHead(404); return res.end('Not found'); }
+  fs.readFile(path.join(ROOT, relFile), (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(relFile)] || 'application/octet-stream' });
     res.end(data);
   });
 });
